@@ -14,7 +14,7 @@ dependencies = [
     "pydantic-settings>=2.12.0",
     "python-dotenv>=1.1.1",
     "uvicorn>=0.38.0",
-    "pattern-agentic-messaging>=0.9.0"
+    "pattern-agentic-messaging>=0.9.1"
     #"pattern-agentic-messaging @ git+ssh://git@github.com/pattern-agentic/lib-python-messaging.git"
 ]
 
