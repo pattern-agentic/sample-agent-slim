@@ -1,66 +1,106 @@
+import asyncio
+import json
 import logging
-from pattern_agentic_messaging import PASlimApp, PASlimConfig
+from typing import Any, Dict
+
+from agntcy_app_sdk.factory import AgntcyFactory
+from agntcy_app_sdk.semantic.message import Message
+
 from .agent_builder import agent_builder
 from .config import settings
 from .log_config import configure_logging
-from .model import QuestionRequest, StatusRequest, AnswerResponse
 
 configure_logging()
 logger = logging.getLogger(__name__)
 
-config = PASlimConfig(
-    local_name=settings.slim_local_name,
-    endpoint=settings.slim_endpoint,
-    auth_secret=settings.slim_auth_secret,
-    message_discriminator="type"
-)
-
-app = PASlimApp(config)
-
-agent = None
+_agent = None
+_agent_lock = asyncio.Lock()
 
 
-@app.on_session_connect
-async def on_connect(session):
-    global agent
-    if agent is None:
-        logger.info("Initializing agent...")
-        agent = await agent_builder.create(settings)
-        logger.info("Agent initialized successfully")
-    logger.info(f"Session {session.session_id} connected")
+async def _get_agent():
+    global _agent
+    if _agent is None:
+        async with _agent_lock:
+            if _agent is None:
+                logger.info("Initializing agent...")
+                _agent = await agent_builder.create(settings)
+                logger.info("Agent initialized successfully")
+    return _agent
 
 
-@app.on_session_disconnect
-async def on_disconnect(session):
-    logger.info(f"Session {session.session_id} disconnected")
+def _parse_payload(message: Message) -> Dict[str, Any]:
+    raw = message.payload
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    if isinstance(raw, str):
+        return json.loads(raw)
+    if isinstance(raw, dict):
+        return raw
+    raise ValueError("Unsupported payload format")
 
 
-@app.on_message
-async def handle_prompt(session, msg: QuestionRequest):
-    logger.info(f"Received prompt message: {msg}")
-
+async def handle_message(message: Message) -> Message:
     try:
-        response = await agent.ask(msg.prompt)
-        await session.send(AnswerResponse(answer=response))
-        logger.info("Sent response")
+        body = _parse_payload(message)
     except Exception as exc:
-        logger.error(f"Error processing request: {exc}", exc_info=True)
-        await session.send({"type": "error", "error": str(exc)})
+        logger.error(f"Failed to parse incoming message: {exc}", exc_info=True)
+        return Message(
+            type="application/json",
+            payload=json.dumps({"type": "error", "error": "invalid payload"}),
+        )
+
+    if not isinstance(body, dict):
+        return Message(
+            type="application/json",
+            payload=json.dumps({"type": "error", "error": "invalid payload"}),
+        )
+
+    msg_type = body.get("type")
+
+    if msg_type == "question":
+        prompt = body.get("prompt", "")
+        agent = await _get_agent()
+        try:
+            answer = await agent.ask(prompt)
+            payload = {"type": "answer", "answer": answer}
+        except Exception as exc:
+            logger.error(f"Error processing request: {exc}", exc_info=True)
+            payload = {"type": "error", "error": str(exc)}
+    elif msg_type == "status":
+        payload = {"type": "status-response", "status": "healthy"}
+    else:
+        payload = {"type": "error", "error": f"Unknown message type: {msg_type}"}
+
+    return Message(type="application/json", payload=json.dumps(payload))
 
 
-@app.on_message
-async def handle_status(session, msg: StatusRequest):
-    logger.info("Receiedv status request response")
-    await session.send({"type": "status-response", "status": "healthy"})
+async def main():
+    factory = AgntcyFactory()
+    transport = factory.create_transport(
+        "SLIM",
+        endpoint=settings.slim_endpoint,
+        name=settings.slim_local_name,
+        shared_secret_identity=settings.slim_auth_secret,
+    )
 
+    await transport.setup()
+    transport.set_callback(handle_message)
+    # SLIM does not require explicit subscribe, but keeping the call aligns with the interface.
+    await transport.subscribe(settings.slim_local_name)
 
-@app.on_message
-async def handle_other(session, msg):
-    logger.warning(f"Unknown message type: {msg}")
-    msg_type = msg.get('type') if isinstance(msg, dict) else None
-    await session.send({"type": "error", "error": f"Unknown message type: {msg_type}"})
+    logger.info(
+        "SLIM interface started at %s as %s", settings.slim_endpoint, settings.slim_local_name
+    )
+
+    stop_event = asyncio.Event()
+    try:
+        await stop_event.wait()
+    except KeyboardInterrupt:
+        logger.info("Shutdown requested, closing transport...")
+    finally:
+        await transport.close()
+        logger.info("Transport closed")
 
 
 if __name__ == "__main__":
-    logger.info(f"Starting SLIM interface on {settings.slim_endpoint} as {settings.slim_local_name}")
-    app.run()
+    asyncio.run(main())

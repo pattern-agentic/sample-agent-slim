@@ -1,55 +1,67 @@
-import sys
 import asyncio
+import json
 import logging
-from pattern_agentic_messaging import PASlimApp, PASlimConfig
+import sys
+
+from agntcy_app_sdk.factory import AgntcyFactory
+from agntcy_app_sdk.semantic.message import Message
+
 from .config import settings
+from .log_config import configure_logging
 
 logger = logging.getLogger(__name__)
 
 
-
 async def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    configure_logging()
 
-    config = PASlimConfig(
-        local_name=settings.slim_local_name + "_client",
+    factory = AgntcyFactory()
+    transport = factory.create_transport(
+        "SLIM",
         endpoint=settings.slim_endpoint,
-        auth_secret=settings.slim_auth_secret
+        name=f"{settings.slim_local_name}_client",
+        shared_secret_identity=settings.slim_auth_secret,
     )
 
-    server_name = settings.slim_local_name
+    await transport.setup()
 
-    logger.info(f"Connecting to SLIM server at {settings.slim_endpoint}")
-    logger.info(f"Client: {config.local_name} -> Server: {server_name}")
+    prompt = sys.argv[1] if len(sys.argv) >= 2 else "What time is it in New York?"
+    logger.info(
+        "Connecting to SLIM at %s | client=%s -> server=%s",
+        settings.slim_endpoint,
+        f"{settings.slim_local_name}_client",
+        settings.slim_local_name,
+    )
 
-    async with PASlimApp(config) as app:
-        logger.info("Creating session...")
-        async with await app.connect(server_name) as session:
-            logger.info("Session established")
+    try:
+        response = await transport.request(
+            recipient=settings.slim_local_name,
+            message=Message(
+                type="application/json",
+                payload=json.dumps({"type": "question", "prompt": prompt}),
+            ),
+            timeout=30,
+        )
+    finally:
+        await transport.close()
 
-            prompt = sys.argv[1] if len(sys.argv) >= 2 else "What time is it in New York?"
-            logger.info(f"Sending request: {prompt}")
+    if not response:
+        print("\nNo response received.\n")
+        return
 
-            await session.send({"type": "question", "prompt": prompt})
+    try:
+        raw = response.payload.decode("utf-8") if isinstance(response.payload, (bytes, bytearray)) else response.payload
+        body = json.loads(raw) if isinstance(raw, str) else raw
+    except Exception as exc:
+        print(f"\nError parsing response: {exc}\n")
+        return
 
-            logger.info("Waiting for response...")
-            async for msg in session:
-                logger.info(f"Received response: {msg}")
-
-                if isinstance(msg, dict):
-                    msg_type = msg.get("type")
-                    if msg_type in {"response", "answer"} and "answer" in msg:
-                        print(f"\nAnswer: {msg['answer']}\n")
-                        break
-                    elif msg_type == "error" and "error" in msg:
-                        print(f"\nError: {msg['error']}\n")
-                        break
-                else:
-                    print(f"\nUnexpected response: {msg}\n")
-                    break
+    if isinstance(body, dict) and "answer" in body:
+        print(f"\nAnswer: {body['answer']}\n")
+    elif isinstance(body, dict) and "error" in body:
+        print(f"\nError: {body['error']}\n")
+    else:
+        print(f"\nUnexpected response: {body}\n")
 
     logger.info("Client finished")
 

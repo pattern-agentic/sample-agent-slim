@@ -9,14 +9,13 @@ dependencies = [
     "langchain-anthropic>=1.0.3",
     "langchain-mcp-adapters>=0.1.12",
     "langchain-openai>=1.0.2",
-    "langchain-google-genai>=2.0.0",
     "mcp>=1.21.0",
+    "agntcy-app-sdk>=0.4.5",
     "pattern-agentic-settings>=1.0.1",
     "pydantic-settings>=2.12.0",
     "python-dotenv>=1.1.1",
     "uvicorn>=0.38.0",
-    "pattern-agentic-messaging>=0.9.1"
-    #"pattern-agentic-messaging @ git+ssh://git@github.com/pattern-agentic/lib-python-messaging.git"
+    # formerly used: pattern-agentic-messaging
 ]
 
 [tool.hatch.build.targets.wheel]

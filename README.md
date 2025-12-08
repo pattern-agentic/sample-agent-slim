@@ -3,7 +3,7 @@
 Sample Agent demonstrating best practices for use on the Pattern Agentic platform:
 
   - settings loaded from env variables
-  - [SLIM](https://docs.agntcy.org/messaging/slim-core/) for communication
+  - [SLIM](https://docs.agntcy.org/messaging/slim-core/) for communication via the [AGNTCY app-sdk](https://github.com/agntcy/app-sdk)
   - MCP tools loaded from configurable path 
 
 
@@ -33,7 +33,7 @@ agent framework (example: langchain).
 
 [slim_interface.py](pa_sample_agent/slim_interface.py)
 
-Exposes the agent using SLIM messages. 
+Exposes the agent using SLIM messages via `agntcy-app-sdk` SLIM transport. 
 
 ## Installation
 
@@ -43,26 +43,21 @@ uv sync
 
 ## Configuration
 
-Copy `env.example` to `.env.dev` and set either `AGNT_GOOGLE_API_KEY`
-(for Gemini via Google AI Studio) or `AGNT_OPENROUTER_API_KEY`
-(OpenRouter/OpenAI-compatible), plus the other parameters.
+Copy `env.example` to `.env.dev` and set `OPENROUTER_API_KEY` and the
+various other parameters.
 
 MCP tools are configured in `mcp.json`.
 
 ## Running
 
+Start a SLIM gateway (see [app-sdk README](../README.md) for local docker-compose or your own gateway).
+
 ```bash
 AGNT_DOT_ENV=.env.dev uv run python -m pa_sample_agent.slim_interface
 ```
 
-## Endpoints
-
-
-### Inference
+In another terminal, send a question:
 
 ```bash
 AGNT_DOT_ENV=.env.dev uv run python -m pa_sample_agent.slim_client "What time is it in New York?"
-
-
-{"answer":"The current time in New York is 12:19 AM on Friday, November 14, 2025."}
 ```
