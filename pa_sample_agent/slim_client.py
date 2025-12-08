@@ -41,7 +41,7 @@ async def main():
 
                 if isinstance(msg, dict):
                     msg_type = msg.get("type")
-                    if msg_type == "response" and "answer" in msg:
+                    if msg_type in {"response", "answer"} and "answer" in msg:
                         print(f"\nAnswer: {msg['answer']}\n")
                         break
                     elif msg_type == "error" and "error" in msg:

@@ -43,8 +43,9 @@ uv sync
 
 ## Configuration
 
-Copy `env.example` to `.env.dev` and set `OPENROUTER_API_KEY` and the
-various other parameters.
+Copy `env.example` to `.env.dev` and set either `AGNT_GOOGLE_API_KEY`
+(for Gemini via Google AI Studio) or `AGNT_OPENROUTER_API_KEY`
+(OpenRouter/OpenAI-compatible), plus the other parameters.
 
 MCP tools are configured in `mcp.json`.
 

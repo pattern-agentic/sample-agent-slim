@@ -1,10 +1,14 @@
 import json
-from langchain_openai import ChatOpenAI
-from langchain_mcp_adapters.client import MultiServerMCPClient
-import langchain.agents
 import logging
-from .config import Settings
+import os
+
+import langchain.agents
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from .agent import SampleAgent
+from .config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +31,26 @@ class AgentBuilder:
         mcp_client = MultiServerMCPClient(mcp_conf)
 
         tools = await mcp_client.get_tools()
-        impl = langchain.agents.create_agent(
-            ChatOpenAI(
+
+        if settings.google_api_key:
+            # Prefer Google Gemini when AGNT_GOOGLE_API_KEY is set
+            llm = ChatGoogleGenerativeAI(
+                model=settings.llm_model,
+                google_api_key=settings.google_api_key,
+            )
+        elif settings.openrouter_api_key:
+            # Fallback to OpenRouter/OpenAI-compatible
+            llm = ChatOpenAI(
                 api_key=settings.openrouter_api_key,
                 base_url="https://openrouter.ai/api/v1",
-                model=settings.llm_model
-            ),
-            tools,
-        )
+                model=settings.llm_model,
+            )
+        else:
+            raise ValueError(
+                "No LLM API key configured. Set AGNT_GOOGLE_API_KEY or AGNT_OPENROUTER_API_KEY."
+            )
+
+        impl = langchain.agents.create_agent(llm, tools)
 
         return SampleAgent(impl)
 
