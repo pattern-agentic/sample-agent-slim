@@ -54,6 +54,19 @@ MCP tools are configured in `mcp.json`.
 AGNT_DOT_ENV=.env.dev uv run python -m pa_sample_agent.slim_interface
 ```
 
+NOTE: for development, it is possible to run a slim server locally. Set the slim endpoint to `http://localhost:46357` and run using docker, see [Slim howto](https://docs.agntcy.org/messaging/slim-howto/#using-docker):
+
+```bash
+cat << EOF > ./slim-config.yaml
+# <slim config here>
+EOF
+
+docker run -it -v ./slim-config.yaml:/slim-config.yaml -p 46357:46357 \
+    ghcr.io/agntcy/slim:0.7.1 /slim --config /slim-config.yaml
+```
+
+NB: the slim docker image tag is e.g. `0.7.1`, not `v0.7.1`
+
 ## Endpoints
 
 
