@@ -23,20 +23,24 @@ class AgentBuilder:
         return None
 
     async def create(self, settings: Settings) -> SampleAgent:
-        mcp_conf = self._load_mcp_config(settings.mcp_json_path)
-        mcp_client = MultiServerMCPClient(mcp_conf)
+        try:
+            mcp_conf = self._load_mcp_config(settings.mcp_json_path)
+            mcp_client = MultiServerMCPClient(mcp_conf)
 
-        tools = await mcp_client.get_tools()
-        impl = langchain.agents.create_agent(
-            ChatOpenAI(
-                api_key=settings.openrouter_api_key,
-                base_url="https://openrouter.ai/api/v1",
-                model=settings.llm_model
-            ),
-            tools,
-        )
+            tools = await mcp_client.get_tools()
+            impl = langchain.agents.create_agent(
+                ChatOpenAI(
+                    api_key=settings.openrouter_api_key,
+                    base_url="https://openrouter.ai/api/v1",
+                    model=settings.llm_model
+                ),
+                tools,
+            )
 
-        return SampleAgent(impl)
+            return SampleAgent(impl)
+        except Exception as exc:
+            logger.error(f"Error creating agent: {exc}", exc_info=True)
+        return None
 
 
 agent_builder = AgentBuilder()

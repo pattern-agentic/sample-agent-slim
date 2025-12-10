@@ -1,18 +1,16 @@
+import logging
 import sys
 import asyncio
-import logging
+
 from pattern_agentic_messaging import PASlimApp, PASlimConfig
 from .config import settings
+from .log_config import configure_logging
 
+configure_logging()
 logger = logging.getLogger(__name__)
 
-
-
 async def main():
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+
 
     config = PASlimConfig(
         local_name=settings.slim_local_name + "_client",
