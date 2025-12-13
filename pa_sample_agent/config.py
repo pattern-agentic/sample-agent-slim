@@ -4,7 +4,7 @@ from pattern_agentic_settings import PABaseSettings
 
 
 class Settings(PABaseSettings):
-    model_config = SettingsConfigDict(env_prefix="AGNT_")
+    model_config = SettingsConfigDict(env_prefix="AGNT_", extra="ignore")
 
     # LLM provider keys (set at least one)
     openrouter_api_key: str | None = None

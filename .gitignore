@@ -3,3 +3,8 @@ __pycache__
 venv
 .venv
 .env*
+
+# Gmail OAuth credentials - NEVER commit these
+gcp-oauth.keys.json
+*credentials.json
+*.keys.json

@@ -13,7 +13,10 @@ class SampleAgent:
             {"messages": [{"role": "user", "content": question}]}
         )
         try:
-            return response['messages'][-1].content
+            content = response['messages'][-1].content
+            if isinstance(content, list):
+                return "".join(block.get("text", "") for block in content if block.get("type") == "text")
+            return content
         except Exception as exc:
             logger.error(str(exc), exc_info=True)
             return str(response)

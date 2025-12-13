@@ -1,10 +1,10 @@
 {
-    "time": {
+    "gmail": {
       "transport": "stdio",
-      "command": "uvx",
+      "command": "npx",
       "args": [
-        "mcp-server-time",
-        "--local-timezone=America/New_York"
+        "-y",
+        "@gongrzhe/server-gmail-autoauth-mcp"
       ]
     }
 }
