@@ -19,6 +19,9 @@ app = PASlimApp(config)
 
 agent = None
 
+@app.on_init
+async def on_init():
+    settings.watch_env_file()
 
 @app.on_session_connect
 async def on_connect(session):
@@ -40,7 +43,7 @@ async def handle_prompt(session, msg: QuestionRequest):
     logger.info(f"Received prompt message: {msg}")
 
     try:
-        response = await agent.ask(msg.prompt)
+        response = await agent.ask(msg.prompt, system_prompt=settings.prompt)
         await session.send(AnswerResponse(answer=response))
         logger.info("Sent response")
     except Exception as exc:
