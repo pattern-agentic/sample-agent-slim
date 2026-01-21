@@ -2,7 +2,7 @@
 
 Sample Agent demonstrating best practices for use on the Pattern Agentic platform:
 
-  - settings loaded from env variables
+  - settings loaded from env variables or from dotenv files (with hot reload)
   - [SLIM](https://docs.agntcy.org/messaging/slim-core/) for communication
   - MCP tools loaded from configurable path 
 

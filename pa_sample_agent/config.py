@@ -9,7 +9,9 @@ class Settings(PABaseSettings):
     openrouter_api_key: str
     mcp_json_path: str
     llm_model: str
-    
+
+    prompt: str
+
     # SLIM configuration
     slim_local_name: str
     slim_endpoint: str
