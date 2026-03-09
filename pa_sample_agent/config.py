@@ -10,8 +10,6 @@ class Settings(PABaseSettings):
     mcp_json_path: str
     llm_model: str
 
-    prompt: str
-
     # SLIM configuration
     slim_local_name: str
     slim_endpoint: str

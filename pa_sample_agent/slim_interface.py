@@ -1,5 +1,6 @@
 import logging
 from pattern_agentic_messaging import PASlimApp, PASlimConfig
+from pattern_agent_sdk import pa_sdk
 from .agent_builder import agent_builder
 from .config import settings
 from .log_config import configure_logging
@@ -43,7 +44,8 @@ async def handle_prompt(session, msg: QuestionRequest):
     logger.info(f"Received prompt message: {msg}")
 
     try:
-        response = await agent.ask(msg.prompt, system_prompt=settings.prompt)
+        system_prompt = await pa_sdk.prompt("inference")
+        response = await agent.ask(msg.prompt, system_prompt=system_prompt)
         await session.send(AnswerResponse(answer=response))
         logger.info("Sent response")
     except Exception as exc:
