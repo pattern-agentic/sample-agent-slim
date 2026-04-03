@@ -1,23 +1,15 @@
 import logging
-from pattern_agentic_messaging import PASlimApp, PASlimConfig
+from pattern_agentic_messaging import PatternAgentSessionToken
 from pattern_agentic_messaging.a2a import Message as A2AMessage, Part, Role
 from pattern_agent_sdk import pa_sdk
 from .agent_builder import agent_builder
 from .config import settings
 from .log_config import configure_logging
-from .model import QuestionRequest, StatusRequest, AnswerResponse
 
 configure_logging()
 logger = logging.getLogger(__name__)
 
-config = PASlimConfig(
-    local_name=settings.slim_local_name,
-    endpoint=settings.slim_endpoint,
-    auth_secret=settings.slim_auth_secret,
-    message_discriminator="type"
-)
-
-app = PASlimApp(config)
+app = pa_sdk.agent_app()
 
 agent = None
 
@@ -43,27 +35,8 @@ async def on_disconnect(session):
 
 
 @app.on_message
-async def handle_prompt(session, msg: QuestionRequest):
-    logger.info(f"Received prompt message: {msg}")
-
-    try:
-        system_prompt = await pa_sdk.prompt("inference")
-        response = await agent.ask(msg.prompt, system_prompt=system_prompt)
-        await session.send(AnswerResponse(answer=response))
-        logger.info("Sent response")
-    except Exception as exc:
-        logger.error(f"Error processing request: {exc}", exc_info=True)
-        await session.send({"type": "error", "error": str(exc)})
-
-
-@app.on_message
-async def handle_status(session, msg: StatusRequest):
-    logger.info("Received status request response")
-    await session.send({"type": "status-response", "status": "healthy"})
-
-
-@app.on_message
-async def handle_a2a(session, msg: A2AMessage):
+async def handle_a2a(session, msg: A2AMessage, agent_session: PatternAgentSessionToken):
+    logger.info(f"Session token: session_id={agent_session.session_id} tenant={agent_session.tenant_id} user={agent_session.user_id} agents={agent_session.agents}")
     text_parts = [p.text for p in msg.parts if p.text is not None]
     if not text_parts:
         logger.warning("A2A message has no text parts")
@@ -94,5 +67,4 @@ async def handle_other(session, msg):
 
 
 if __name__ == "__main__":
-    logger.info(f"Starting SLIM interface on {settings.slim_endpoint} as {settings.slim_local_name}")
     app.run()
