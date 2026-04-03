@@ -1,5 +1,6 @@
 import logging
 from pattern_agentic_messaging import PASlimApp, PASlimConfig
+from pattern_agentic_messaging.a2a import Message as A2AMessage, Part, Role
 from pattern_agent_sdk import pa_sdk
 from .agent_builder import agent_builder
 from .config import settings
@@ -20,9 +21,11 @@ app = PASlimApp(config)
 
 agent = None
 
+
 @app.on_init
 async def on_init():
     settings.watch_env_file()
+
 
 @app.on_session_connect
 async def on_connect(session):
@@ -55,8 +58,32 @@ async def handle_prompt(session, msg: QuestionRequest):
 
 @app.on_message
 async def handle_status(session, msg: StatusRequest):
-    logger.info("Receiedv status request response")
+    logger.info("Received status request response")
     await session.send({"type": "status-response", "status": "healthy"})
+
+
+@app.on_message
+async def handle_a2a(session, msg: A2AMessage):
+    text_parts = [p.text for p in msg.parts if p.text is not None]
+    if not text_parts:
+        logger.warning("A2A message has no text parts")
+        await session.send({"type": "error", "error": "A2A message contains no text parts"})
+        return
+
+    prompt = "\n".join(text_parts)
+    logger.info(f"Received A2A message (context={msg.context_id}): {prompt[:100]}")
+
+    system_prompt = await pa_sdk.prompt("inference")
+    response = await agent.ask(prompt, system_prompt=system_prompt)
+
+    reply = A2AMessage(
+        role=Role.AGENT,
+        parts=[Part.from_text(response)],
+        context_id=msg.context_id,
+        task_id=msg.task_id,
+    )
+    await session.send(reply.model_dump(by_alias=True, exclude_none=True))
+    logger.info(f"Sent A2A response (context={msg.context_id})")
 
 
 @app.on_message

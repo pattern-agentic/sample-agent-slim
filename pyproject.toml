@@ -1,6 +1,6 @@
 [project]
 name = "pa-sample-agent"
-version = "0.2.1"
+version = "0.3.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
@@ -17,6 +17,8 @@ dependencies = [
     "pattern-agentic-settings[hotreload]>=2.0.0",
     "pattern-agent-sdk>=0.1.0",
     #"pattern-agentic-messaging @ git+ssh://git@github.com/pattern-agentic/lib-python-messaging.git@main"
+  "pattern-agent-sdk",
+  "pattern-agentic-messaging",
 ]
 
 [tool.hatch.build.targets.wheel]
