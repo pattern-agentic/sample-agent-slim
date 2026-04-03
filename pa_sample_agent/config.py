@@ -10,12 +10,5 @@ class Settings(PABaseSettings):
     mcp_json_path: str
     llm_model: str
 
-    prompt: str
-
-    # SLIM configuration
-    slim_local_name: str
-    slim_endpoint: str
-    slim_auth_secret: str
-
 
 settings = Settings.load('pa_sample_agent')
