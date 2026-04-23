@@ -1,11 +1,36 @@
 {
-    "time": {
-      "transport": "stdio",
-      "command": "uvx",
-      "args": [
-        "mcp-server-time",
-        "--local-timezone=America/New_York"
-      ]
+  "time": {
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "mcp-server-time",
+      "--local-timezone=America/New_York"
+    ]
+  },
+  "searxng": {
+    "transport": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "mcp-searxng"
+    ],
+    "env": {
+      "SEARXNG_URL": "http://localhost:8080"
     }
+  },
+  "odoo-dev": {
+    "transport": "stdio",
+    "command": "uvx",
+    "args": [
+      "mcp-server-odoo"
+    ],
+    "env": {
+      "ODOO_URL": "https://fulfilment-dev-31161893.dev.odoo.com",
+      "ODOO_USER": "admin",
+      "ODOO_PASSWORD": "admin",
+      "ODOO_API_KEY": "129134d6173e50d1acc562a683b0ccad1492d0ae",
+      "ODOO_DB": "fulfilment-dev-31161893",
+      "ODOO_YOLO": "true"
+    }
+  }
 }
-
