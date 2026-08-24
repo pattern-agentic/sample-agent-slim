@@ -67,6 +67,38 @@ docker run -it -v ./slim-config.yaml:/slim-config.yaml -p 46357:46357 \
 
 NB: the slim docker image tag is e.g. `0.7.1`, not `v0.7.1`
 
+### Observability (optional)
+
+SLIM ships native OpenTelemetry support for its own connection/session lifecycle
+(separate from anything the agent itself does). It's off by default. To turn it
+on, add this to `slim-config.yaml`'s `tracing` block:
+
+```yaml
+tracing:
+  opentelemetry:
+    enabled: true
+    service_name: "slim-data-plane"
+    service_version: "v0.1.0"
+    grpc:
+      endpoint: "http://otel-collector:4317"
+      tls:
+        insecure: true
+```
+
+Then run a collector to receive it — `telemetry/docker-compose.yml` stands up an
+OTEL Collector pre-wired to export to Grafana Cloud:
+
+```bash
+cp telemetry/env.grafana.example telemetry/.env.grafana
+# fill in GRAFANA_OTLP_INSTANCE_ID and GRAFANA_OTLP_TOKEN — see comments in the file
+cd telemetry && docker compose up -d
+```
+
+Make sure the SLIM container and the collector are on the same docker network
+(`docker network connect <network> slim-dev`, or run both via one compose file) —
+SLIM's default collector endpoint (`localhost:4317`) does not resolve across
+separate containers.
+
 ## Endpoints
 
 
