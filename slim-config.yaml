@@ -1,0 +1,27 @@
+tracing:
+  log_level: info
+  display_thread_names: true
+  display_thread_ids: true
+  opentelemetry:
+    enabled: true
+    service_name: "slim-data-plane"
+    service_version: "v0.1.0"
+    grpc:
+      endpoint: "http://otel-collector:4317"
+      tls:
+        insecure: true
+
+runtime:
+  n_cores: 0
+  thread_name: "slim-data-plane"
+  drain_timeout: 10s
+
+services:
+  slim/0:
+    dataplane:
+      servers:
+        - endpoint: "0.0.0.0:46357"
+          tls:
+            insecure: true
+
+      clients: []

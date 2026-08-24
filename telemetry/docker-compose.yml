@@ -1,0 +1,10 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    env_file:
+      - .env.grafana
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver (SLIM connects here)
